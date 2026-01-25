@@ -1,0 +1,35 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_19-551d0652d9868a99ec524e8274f26328ad7d188c",
+  "solcVersion": "0.8.19",
+  "solcLongVersion": "0.8.19+commit.7dd6d404",
+  "userSourceNameMap": {
+    "contracts/Voting.sol": "project/contracts/Voting.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "paris",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Voting.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.19;\r\n\r\ncontract VotingSystem {\r\n    struct Candidate {\r\n        uint id;\r\n        string name;\r\n        uint voteCount;\r\n    }\r\n\r\n    mapping(uint => Candidate) public candidates;\r\n    mapping(string => bool) public voters; // EPIC number based tracking\r\n    \r\n    uint public candidatesCount;\r\n    address public admin;\r\n    string public electionName;\r\n\r\n    event VotedEvent(uint indexed _candidateId);\r\n\r\n    constructor(string memory _name) {\r\n        admin = msg.sender;\r\n        electionName = _name;\r\n    }\r\n\r\n    function addCandidate(string memory _name) public {\r\n        require(msg.sender == admin, \"Only admin can add candidates\");\r\n        candidatesCount++;\r\n        candidates[candidatesCount] = Candidate(candidatesCount, _name, 0);\r\n    }\r\n\r\n    function vote(uint _candidateId, string memory _epicNumber) public {\r\n        // Require that they haven't voted before\r\n        require(!voters[_epicNumber], \"This EPIC number has already voted.\");\r\n\r\n        // Require a valid candidate\r\n        require(_candidateId > 0 && _candidateId <= candidatesCount, \"Invalid candidate.\");\r\n\r\n        // Record the voter has voted\r\n        voters[_epicNumber] = true;\r\n\r\n        // Update candidate vote Count\r\n        candidates[_candidateId].voteCount++;\r\n\r\n        emit VotedEvent(_candidateId);\r\n    }\r\n\r\n    function getCandidate(uint _candidateId) public view returns (uint, string memory, uint) {\r\n        return (candidates[_candidateId].id, candidates[_candidateId].name, candidates[_candidateId].voteCount);\r\n    }\r\n}\r\n"
+      }
+    }
+  }
+}

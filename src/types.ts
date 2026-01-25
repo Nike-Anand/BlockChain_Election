@@ -11,6 +11,7 @@ export interface Party {
   votes: number;
   description: string;
   manifesto: string;
+  imageUrl?: string;
 }
 
 export interface Vote {
@@ -18,6 +19,7 @@ export interface Vote {
   partyName: string;
   timestamp: string;
   boothId: string;
+  hash?: string;
 }
 
 export interface ElectionSettings {

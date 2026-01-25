@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+opencv-python
+numpy<2.0.0
+mediapipe
+protobuf==3.20.3
+deepface
+tf-keras
+tensorflow
+motor
+pymongo
+python-dotenv
+supabase

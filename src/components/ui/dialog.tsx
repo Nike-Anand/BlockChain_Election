@@ -24,8 +24,8 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   );
 }
 
-export function DialogContent({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-4">{children}</div>;
+export function DialogContent({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={`space-y-4 ${className}`}>{children}</div>;
 }
 
 export function DialogHeader({ children }: { children: React.ReactNode }) {
@@ -34,4 +34,8 @@ export function DialogHeader({ children }: { children: React.ReactNode }) {
 
 export function DialogTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-lg font-semibold">{children}</h2>;
+}
+
+export function DialogDescription({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <p className={`text-sm text-slate-500 ${className}`}>{children}</p>;
 }

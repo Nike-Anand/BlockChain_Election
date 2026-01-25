@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Party } from '../types';
-import { Check, Info, Award } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface VotingBoothProps {
   parties: Party[];
@@ -11,9 +11,9 @@ interface VotingBoothProps {
   onViewPartyInfo: (party: Party) => void;
 }
 
-export function VotingBooth({ parties, onVote, onViewPartyInfo }: VotingBoothProps) {
+export function VotingBooth({ parties, onVote }: VotingBoothProps) {
   const [selectedParty, setSelectedParty] = useState<string | null>(null);
-  const [hoveredParty, setHoveredParty] = useState<string | null>(null);
+  const [viewingManifesto, setViewingManifesto] = useState<Party | null>(null);
 
   const handleVote = () => {
     if (selectedParty) {
@@ -22,101 +22,142 @@ export function VotingBooth({ parties, onVote, onViewPartyInfo }: VotingBoothPro
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('https://images.unsplash.com/photo-1477281765962-ef34e8bb0967?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHZvdGV8ZW58MHx8MHx8fDA%3D')" }}
-    >
-      <Card 
-        className="w-full max-w-4xl mx-auto shadow-2xl border-0 overflow-hidden bg-white/90 backdrop-blur-md p-6"
-      >
-        <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 text-center">
-          <CardTitle className="text-3xl font-bold flex items-center justify-center gap-3">
-            <Award className="w-8 h-8" />
-            Cast Your Vote
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {parties.map((party) => (
-              <motion.div
-                key={party.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: parties.findIndex(p => p.name === party.name) * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`
-                  relative border-2 rounded-xl p-5 cursor-pointer transition-all duration-300 ease-in-out
-                  ${selectedParty === party.name 
-                    ? 'border-blue-500 bg-blue-50/50 ring-4 ring-blue-200/50' 
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/20'}
-                `}
-                onClick={() => setSelectedParty(party.name)}
-                onMouseEnter={() => setHoveredParty(party.name)}
-                onMouseLeave={() => setHoveredParty(null)}
-              >
-                <AnimatePresence>
-                  {selectedParty === party.name && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      className="absolute top-2 right-2 text-blue-500"
-                    >
-                      <Check className="h-6 w-6" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="text-4xl">{party.symbol}</div>
-                  <h3 className="text-xl font-bold text-gray-800">{party.name}</h3>
-                </div>
-                <motion.p 
-                  className="text-sm text-gray-600 mb-4 h-16 overflow-hidden"
-                  animate={{ 
-                    opacity: hoveredParty === party.name ? 0.7 : 1,
-                    scale: hoveredParty === party.name ? 1.02 : 1
-                  }}
-                >
-                  {party.description}
-                </motion.p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full flex items-center justify-center gap-2 hover:bg-blue-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewPartyInfo(party);
-                  }}
-                >
-                  <Info className="h-4 w-4" />
-                  View Manifesto
-                </Button>
-              </motion.div>
-            ))}
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col items-center py-12 px-4">
+      {/* Header */}
+      <div className="w-full bg-slate-900 border-b border-yellow-500 shadow-md mb-12 py-6">
+        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 mb-4 bg-white rounded-full flex items-center justify-center shadow-lg border-4 border-yellow-500">
+            {/* Emblem Placeholder - Using Landmark as simplified emblem */}
+            <div className="text-slate-900"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="22" y2="22" /><line x1="6" x2="6" y1="22" y2="12" /><line x1="18" x2="18" y1="22" y2="12" /><path d="M6 12L12 2L18 12" /></svg></div>
           </div>
-          <motion.div 
-            className="mt-8 flex justify-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Button
-              onClick={handleVote}
-              disabled={!selectedParty}
-              className="
-                px-10 py-3 text-lg font-bold
-                bg-gradient-to-r from-blue-600 to-purple-600
-                hover:from-blue-700 hover:to-purple-700
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-all duration-300 ease-in-out
-              "
+          <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 uppercase tracking-wider">
+            TAMIL NADU STATE ELECTION COMMISSION
+          </h1>
+          <h2 className="text-xl md:text-2xl font-bold text-yellow-500 mb-2">
+            தமிழ்நாடு மாநில தேர்தல் ஆணையம்
+          </h2>
+          <div className="px-4 py-1 bg-slate-800 rounded text-slate-300 text-sm font-mono tracking-widest border border-slate-700">
+            SECURE VOTING TERMINAL • 2026
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32 px-6">
+        {parties.map((party, index) => {
+          const isSelected = selectedParty === party.name;
+          return (
+            <motion.div
+              key={party.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className={`
+                relative bg-white rounded-xl overflow-hidden transition-all duration-200
+                ${isSelected
+                  ? 'ring-4 ring-blue-700 shadow-xl transform scale-[1.01]'
+                  : 'border border-slate-200 shadow-sm hover:shadow-md'}
+              `}
             >
-              Confirm Vote
-            </Button>
+              <div className="p-6 flex flex-col h-full items-center text-center">
+
+                {/* Checkmark Overlay */}
+                {isSelected && (
+                  <div className="absolute top-4 right-4 bg-blue-700 text-white p-1 rounded-full shadow-lg">
+                    <Check className="w-5 h-5" />
+                  </div>
+                )}
+
+                {/* Image Area */}
+                <div className="w-32 h-32 mb-6 rounded-full border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center overflow-hidden">
+                  {party.imageUrl ? (
+                    <img src={party.imageUrl} alt={party.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-4xl font-bold text-slate-300">{party.name[0]}</span>
+                  )}
+                </div>
+
+                {/* Text Info */}
+                <h3 className="text-xl font-bold text-slate-800 mb-2 uppercase">{party.name}</h3>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-6">
+                  Official Candidate
+                </div>
+
+                <div className="w-full mt-auto space-y-3">
+                  <Button
+                    onClick={() => setViewingManifesto(party)}
+                    variant="outline"
+                    className="w-full border-slate-300 text-slate-600 hover:bg-slate-50 text-xs uppercase tracking-wider font-bold"
+                  >
+                    View Manifesto / தேர்தல் அறிக்கை
+                  </Button>
+                  <Button
+                    onClick={() => setSelectedParty(party.name)}
+                    className={`w-full h-12 text-sm font-bold uppercase tracking-widest ${isSelected ? 'bg-blue-700 hover:bg-blue-800' : 'bg-slate-800 hover:bg-slate-900'}`}
+                  >
+                    {isSelected ? 'SELECTED' : 'VOTE / வாக்களி'}
+                  </Button>
+                </div>
+
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Floating Confirm Bar */}
+      <AnimatePresence>
+        {selectedParty && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-indigo-100 p-6 z-50 shadow-2xl"
+          >
+            <div className="max-w-4xl mx-auto flex items-center justify-between gap-6">
+              <div className="hidden md:block">
+                <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">You have selected</p>
+                <h3 className="text-3xl font-black text-indigo-900">{selectedParty}</h3>
+              </div>
+              <Button
+                onClick={handleVote}
+                className="flex-1 md:flex-none md:w-64 h-16 text-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-xl shadow-green-500/20 rounded-xl"
+              >
+                CONFIRM VOTE <ChevronRight className="w-6 h-6 ml-2" />
+              </Button>
+            </div>
           </motion.div>
-        </CardContent>
-      </Card>
+        )}
+      </AnimatePresence>
+
+      {/* Manifesto Dialog */}
+      <Dialog open={!!viewingManifesto} onOpenChange={(open) => !open && setViewingManifesto(null)}>
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-lg border-none shadow-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-4 mb-4">
+              {viewingManifesto?.imageUrl ? (
+                <img src={viewingManifesto.imageUrl} className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center text-3xl">
+                  {viewingManifesto?.symbol}
+                </div>
+              )}
+              <div>
+                <DialogTitle className="text-2xl font-bold">{viewingManifesto?.name}</DialogTitle>
+                <DialogDescription>Official Election Manifesto 2026</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 max-h-[60vh] overflow-y-auto">
+            <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+              {viewingManifesto?.manifesto || "No manifesto information available for this candidate."}
+            </p>
+          </div>
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setViewingManifesto(null)} variant="secondary">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
