@@ -10,36 +10,9 @@ interface ElectionDB {
 }
 
 const DEFAULT_DB: ElectionDB = {
-  admin: { username: 'admin', password: 'admin123', voterId: 'ADMIN001', role: 'admin' },
-  users: [
-    { username: 'admin', password: 'admin123', voterId: 'ADMIN001', role: 'admin' }
-  ],
-  parties: [
-    {
-      name: "Dravida Munnetra Kazhagam (DMK)",
-      symbol: "☀️",
-      description: "Dravidian model of governance focused on Social Justice, Equality, and State Autonomy. Leading the Secular Progressive Alliance.",
-      manifesto: "1. State Autonomy\n2. Social Justice & Equality\n3. Women's Rights & Empowerment\n4. Education & Health for All\n5. Economic Development & Industrial Growth",
-      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/e/ee/Flag_DMK.svg", // Official SVG
-      votes: 0
-    },
-    {
-      name: "All India Anna Dravida Munnetra Kazhagam (AIADMK)",
-      symbol: "🍃",
-      description: "Working for the welfare of the poor and downtrodden, following the path of Puratchi Thalaivar MGR and Puratchi Thalaivi Amma.",
-      manifesto: "1. Welfare Schemes for Women\n2. Free Education & Laptops\n3. Protecting State Rights\n4. Infrastructure Development\n5. Farmer Welfare",
-      imageUrl: "https://upload.wikimedia.org/wikipedia/commons/1/1d/AIADMK_Flag.svg", // Official SVG
-      votes: 0
-    },
-    {
-      name: "Tamizhaga Vettri Kazhagam (TVK)",
-      symbol: "🐘",
-      description: "Working for the welfare of the people of Tamil Nadu",
-      manifesto: "1. Victory for Tamil Nadu\n2. Welfare for All",
-      imageUrl: "https://upload.wikimedia.org/wikipedia/en/2/29/Tamilaga_Vettri_Kazhagam_Flag.svg", // Placeholder / Prediction
-      votes: 0
-    }
-  ],
+  admin: { username: '', password: '', voterId: '', role: 'admin' },
+  users: [],
+  parties: [],
   votes: [],
   electionSettings: {
     startTime: new Date().toISOString(),
@@ -61,21 +34,38 @@ export function useElection() {
     fetch('http://127.0.0.1:5000/api/get-db')
       .then(res => res.json())
       .then(data => {
-        if (data && !data.error) setDb(data);
-        else setDb(DEFAULT_DB);
+        if (data && !data.error) {
+          // Ensure all arrays exist even if DB returns nulls
+          const cleanData = {
+            ...data,
+            users: data.users || [],
+            parties: data.parties || [],
+            votes: data.votes || [],
+            electionSettings: data.electionSettings || DEFAULT_DB.electionSettings
+          };
+          setDb(cleanData);
+        }
+        else {
+          console.error("API Error or Empty Data:", data);
+          setDb(DEFAULT_DB);
+        }
       })
-      .catch(() => setDb(DEFAULT_DB));
+      .catch((err) => {
+        console.error("Fetch Error:", err);
+        setDb(DEFAULT_DB);
+      });
   };
 
   useEffect(() => { refreshDb(); }, []);
 
   // Actions
-  const registerUser = async (user: Partial<User>) => {
+  const registerUser = async (user: Partial<User> & { photoBase64?: string }) => {
     const res = await fetch('http://127.0.0.1:5000/api/register-voter', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user)
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    if (data.detail) throw new Error(data.detail);
     refreshDb();
     return data;
   };
@@ -86,6 +76,7 @@ export function useElection() {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    if (data.detail) throw new Error(data.detail);
     refreshDb();
     return data;
   };
@@ -96,6 +87,7 @@ export function useElection() {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    if (data.detail) throw new Error(data.detail);
     refreshDb();
     return data;
   }
@@ -129,7 +121,7 @@ export function useElection() {
     return db?.parties.map(party => ({
       name: party.name,
       votes: party.votes,
-      percentage: (party.votes / (db.votes.length || 1)) * 100
+      percentage: (party.votes / ((db?.votes?.length) || 1)) * 100
     })) ?? [];
   };
 

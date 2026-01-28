@@ -7,7 +7,11 @@ create table public.users (
   username text unique not null,
   password text not null,
   voter_id text unique not null,
-  role text check (role in ('admin', 'voter')) default 'voter',
+  role text check (role in ('admin', 'voter', 'commission')) default 'voter',
+  pass1 text,
+  pass2 text,
+  pass3 text,
+  pass4 text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -50,9 +54,23 @@ values (1, false, true)
 on conflict (id) do nothing;
 
 -- Insert Admin User (Default)
-insert into public.users (username, password, voter_id, role)
-values ('admin', '123', 'ADMIN', 'admin')
+insert into public.users (username, password, voter_id, role, pass1, pass2, pass3, pass4)
+values ('admin', '123', 'ADMIN', 'admin', 'pass1', 'pass2', 'pass3', 'pass4')
 on conflict (username) do nothing;
+
+-- Insert Election Commission User
+insert into public.users (username, password, voter_id, role)
+values ('commission', 'comm123', 'COMMISSION', 'commission')
+on conflict (username) do nothing;
+
+-- Insert 4-Factor Authorization Key Holders
+insert into public.users (username, password, voter_id, role)
+values 
+  ('Secretariat 1', 'pass1', 'SE', 'admin'),
+  ('Secretariat 2', 'pass2', 'SE-2', 'admin'),
+  ('Observer', 'pass3', 'OB', 'admin'),
+  ('Administrator', 'pass4', 'ADM', 'admin')
+on conflict (voter_id) do nothing;
 
 -- RLS Policies (Optional but Good Practice - Disable for now for ease of API access)
 alter table public.users enable row level security;

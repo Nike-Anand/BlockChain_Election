@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --primary-navy: #003366;
+  --secondary-white: #FFFFFF;
+  --state-green: #006400;
+  --action-saffron: #FF9933;
+  --alert-red: #D32F2F;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 51, 102, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--secondary-white)] text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--primary-navy)] text-white hover:bg-[#002244] transition-all duration-300 shadow-md hover:shadow-lg rounded-lg px-6 py-2 font-bold uppercase tracking-wider;
+  }
+  
+  .btn-action {
+    @apply bg-[var(--action-saffron)] text-white hover:bg-[#e68a2e] transition-all duration-300 shadow-md hover:shadow-lg rounded-lg px-6 py-2 font-bold uppercase tracking-wider;
+  }
+
+  .futuristic-card {
+    @apply bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:translate-y-[-2px];
+  }
+
+  .glass-header {
+    @apply bg-[var(--primary-navy)]/95 backdrop-blur-md sticky top-0 z-50 border-b border-[var(--action-saffron)]/30;
+  }
+
+  .neon-glow-red {
+    text-shadow: 0 0 10px rgba(211, 47, 47, 0.5);
+  }
+
+  .neon-glow-green {
+    text-shadow: 0 0 10px rgba(0, 100, 0, 0.5);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-navy);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #002244;
+}

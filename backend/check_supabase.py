@@ -19,13 +19,19 @@ try:
     # Try a simple query - assuming 'settings' table exists as seen in app.py
     # or just check if we can query anything. 'users' is also used in app.py.
     # We'll try to select 1 item from 'settings' which is likely small.
-    response = supabase.table("settings").select("*").limit(1).execute()
+    # Check users table
+    response = supabase.table("users").select("*").limit(1).execute()
     
     print("✅ Successfully connected to Supabase!")
     if response.data:
-        print("Fetched data:", response.data)
+        user = response.data[0]
+        print("Fetched Admin/User data:", user)
+        if "pass1" in user:
+            print("✅ 'pass1' column exists in 'users' table.")
+        else:
+            print("❌ 'pass1' column MISSING in 'users' table.")
     else:
-        print("Connected, but 'settings' table is empty (or RLS prevents viewing).")
+        print("Connected, but 'users' table is empty.")
         
 except Exception as e:
     print(f"❌ Failed to connect to Supabase: {e}")
