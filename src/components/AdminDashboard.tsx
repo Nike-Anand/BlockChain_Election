@@ -482,14 +482,16 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
               </div>
               <div className="p-12 space-y-10">
                 <div className="grid grid-cols-2 gap-6">
-                  {authPasswords.map((p, i) => (
+                  {authPasswords.map((p, i) => {
+                    const labels = ['SEC1', 'SEC2', 'OBS1', 'ADM1'];
+                    return (
                     <div key={i} className="space-y-3">
-                      <Label className="text-[10px] uppercase font-black text-[#003366] tracking-widest pl-2">Segment {i + 1}</Label>
+                      <Label className="text-[10px] uppercase font-black text-[#003366] tracking-widest pl-2">{labels[i]}</Label>
                       <Input type="password" value={p} onChange={e => {
                         const n = [...authPasswords]; n[i] = e.target.value; setAuthPasswords(n);
                       }} className="h-14 text-center text-xl font-mono focus:ring-4 focus:ring-[#FF9933]/20 rounded-2xl bg-slate-50 border-none shadow-inner" placeholder="••••" />
                     </div>
-                  ))}
+                  )})}
                 </div>
                 <div className="flex gap-4 pt-4">
                   <Button variant="outline" className="flex-1 h-14 rounded-2xl border-2 border-slate-100 text-slate-400 font-black uppercase tracking-widest" onClick={() => setShowAuthModal({ show: false, action: 'start' })}>Abort</Button>

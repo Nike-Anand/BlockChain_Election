@@ -141,10 +141,10 @@ export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
                                                 <Card className="bg-[#003366] text-white rounded-[2.5rem] p-8 shadow-2xl border-none relative overflow-hidden">
                                                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
                                                     <Award className="w-12 h-12 text-[#FF9933] mb-6" />
-                                                    <h3 className="text-3xl font-black uppercase tracking-tighter">Winner Declared</h3>
+                                                    <h3 className="text-3xl font-black uppercase tracking-tighter text-black">Winner Declared</h3>
                                                     <div className="mt-8 p-6 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-md">
-                                                        <p className="text-[10px] font-black text-[#FF9933] uppercase tracking-widest mb-1">Leading Candidate</p>
-                                                        <p className="text-4xl font-black uppercase text-white truncate">
+                                                        <p className="text-[10px] font-black text-[#FF9933] uppercase tracking-widest mb-1">Leading party</p>
+                                                        <p className="text-4xl font-black uppercase text-black truncate">
                                                             {finalTally ? Object.entries(finalTally).sort((a: any, b: any) => b[1] - a[1])[0][0] : "Calculating..."}
                                                         </p>
                                                     </div>
