@@ -200,8 +200,8 @@ function App() {
   if (!db) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-8 p-12">
-        <div className="w-32 h-32 bg-white rounded-3xl shadow-2xl border-2 border-[#FF9933] p-4 relative animate-bounce overflow-hidden">
-          <img src="/tn-emblem.png" alt="TN State Logo" className="w-full h-full object-contain" />
+        <div className="w-32 h-32 bg-white rounded-full shadow-2xl border-4 border-[#FF9933] p-4 relative overflow-hidden flex items-center justify-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN State Logo" className="w-full h-full object-contain" />
         </div>
         <div className="text-center space-y-2">
           <h2 className="text-4xl font-black text-[#003366] uppercase tracking-tighter">தமிழ்நாடு மாநில தேர்தல் ஆணையம்</h2>
@@ -222,7 +222,7 @@ function App() {
       <div className="fixed top-0 inset-x-0 h-2 bg-gradient-to-r from-red-600 via-amber-500 to-black z-50"></div>
 
       {/* Background Motifs */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg')", backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '50%' }}></div>
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: "url('https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg')", backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: '40%' }}></div>
 
       <div className="relative z-10">
         {alert.show && (
@@ -236,12 +236,12 @@ function App() {
           </div>
         )}
 
-        {/* HEADER - Global Futuristic Header */}
+        {/* HEADER - Global Professional Header */}
         {view !== 'admin-dashboard' && (
           <header className="bg-[#003366] border-b-2 border-[#FF9933]/50 p-4 sticky top-0 z-40 shadow-xl">
             <div className="max-w-7xl mx-auto flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-inner border-2 border-[#FF9933] overflow-hidden">
-                <img src="/tn-emblem.png" alt="TN State Emblem" className="w-full h-full object-contain p-1" />
+              <div className="w-12 h-12 bg-white rounded-full shadow-md border border-[#FF9933] overflow-hidden p-1 flex items-center justify-center">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN State Emblem" className="w-full h-full object-contain" />
               </div>
               <div className="flex flex-col">
                 <h1 className="text-xl md:text-2xl font-black text-white tracking-tighter leading-none uppercase">
@@ -267,8 +267,8 @@ function App() {
             <Card className="w-full max-w-lg bg-white shadow-[0_50px_100px_rgba(0,51,102,0.15)] rounded-[3rem] overflow-hidden border-none text-center">
               <div className="bg-[#003366] p-10 text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
-                <div className="w-24 h-24 bg-white rounded-3xl mx-auto mb-6 p-4 shadow-xl border-2 border-[#FF9933]">
-                  <img src="/tn-emblem.png" alt="TN Logo" className="w-full h-full object-contain" />
+                <div className="w-24 h-24 bg-white rounded-full mx-auto mb-6 p-4 shadow-xl border-4 border-[#FF9933] flex items-center justify-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN Logo" className="w-full h-full object-contain" />
                 </div>
                 <h2 className="text-3xl font-black text-white relative z-10 mb-2 uppercase tracking-tighter">
                   {view === 'landing' ? 'Voter Entry' :
@@ -293,8 +293,8 @@ function App() {
                         </Label>
                         <div className="relative">
                           <Input
-                            className="pl-14 h-16 text-2xl font-mono tracking-[0.2em] uppercase bg-slate-50 border-none rounded-2xl shadow-inner focus:ring-4 focus:ring-[#FF9933]/20 transition-all font-black"
-                            placeholder="ABC1234567"
+                            className="pl-14 h-16 text-2xl font-mono tracking-[0.2em] uppercase bg-slate-50 border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-[#003366] transition-all font-bold"
+                            placeholder="ENTER EPIC NO."
                             value={epicNumber}
                             onChange={(e) => setEpicNumber(e.target.value.toUpperCase())}
                           />
@@ -327,7 +327,8 @@ function App() {
                       <div className="space-y-2">
                         <Label className="uppercase text-[10px] font-black text-slate-400 tracking-widest pl-2">Security ID</Label>
                         <Input
-                          className="h-14 bg-slate-50 border-none rounded-2xl shadow-inner font-black px-6"
+                          className="h-14 bg-slate-50 border-gray-200 rounded-lg shadow-sm font-bold px-6 focus:ring-2 focus:ring-[#003366]"
+                          placeholder="Enter Admin ID"
                           value={adminLoginData.username}
                           onChange={(e) => setAdminLoginData({ ...adminLoginData, username: e.target.value })}
                         />
@@ -336,7 +337,8 @@ function App() {
                         <Label className="uppercase text-[10px] font-black text-slate-400 tracking-widest pl-2">Passcode</Label>
                         <Input
                           type="password"
-                          className="h-14 bg-slate-50 border-none rounded-2xl shadow-inner font-black px-6"
+                          className="h-14 bg-slate-50 border-gray-200 rounded-lg shadow-sm font-bold px-6 focus:ring-2 focus:ring-[#003366]"
+                          placeholder="Enter Passcode"
                           value={adminLoginData.password}
                           onChange={(e) => setAdminLoginData({ ...adminLoginData, password: e.target.value })}
                         />
@@ -357,7 +359,8 @@ function App() {
                       <div className="space-y-2">
                         <Label className="uppercase text-[10px] font-black text-slate-400 tracking-widest pl-2">Inspectorate ID</Label>
                         <Input
-                          className="h-14 bg-slate-50 border-none rounded-2xl shadow-inner font-black px-6"
+                          className="h-14 bg-slate-50 border-gray-200 rounded-lg shadow-sm font-bold px-6 focus:ring-2 focus:ring-[#003366]"
+                          placeholder="Enter Inspectorate ID"
                           value={commLoginData.username}
                           onChange={(e) => setCommLoginData({ ...commLoginData, username: e.target.value })}
                         />
@@ -366,7 +369,8 @@ function App() {
                         <Label className="uppercase text-[10px] font-black text-slate-400 tracking-widest pl-2">Authorization Key</Label>
                         <Input
                           type="password"
-                          className="h-14 bg-slate-50 border-none rounded-2xl shadow-inner font-black px-6"
+                          className="h-14 bg-slate-50 border-gray-200 rounded-lg shadow-sm font-bold px-6 focus:ring-2 focus:ring-[#003366]"
+                          placeholder="Enter Authorization Key"
                           value={commLoginData.password}
                           onChange={(e) => setCommLoginData({ ...commLoginData, password: e.target.value })}
                         />
@@ -469,8 +473,8 @@ function App() {
               {/* Receipt Content Wrapper for Capture */}
               <div id="receipt-card" className="bg-white">
                 <CardContent className="text-center pt-12 pb-10 px-10 space-y-10">
-                  <div className="w-24 h-24 bg-white rounded-2xl mx-auto p-4 shadow-xl border-2 border-[#FF9933]">
-                    <img src="/tn-emblem.png" alt="TN Logo" className="w-full h-full object-contain" />
+                  <div className="w-24 h-24 bg-white rounded-full mx-auto p-4 shadow-xl border-4 border-[#FF9933] flex items-center justify-center">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN Logo" className="w-full h-full object-contain" />
                   </div>
 
                   <div>

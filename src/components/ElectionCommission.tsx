@@ -56,8 +56,8 @@ export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
             <div className="w-80 bg-[#003366] text-white flex flex-col shadow-2xl z-20 border-r border-[#FF9933]/50">
                 <div className="p-8 bg-[#002244] border-b border-[#FF9933]/30">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white p-2 rounded-xl shadow-lg">
-                            <img src="/tn-emblem.png" alt="TN Logo" className="w-10 h-10 object-contain" />
+                        <div className="bg-white p-2 rounded-full shadow-lg flex items-center justify-center">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN Logo" className="w-10 h-10 object-contain" />
                         </div>
                         <div>
                             <h1 className="font-black text-lg tracking-tighter uppercase leading-none">COMMISSION</h1>

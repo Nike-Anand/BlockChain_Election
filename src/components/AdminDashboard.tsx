@@ -92,8 +92,8 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
       <div className="w-80 bg-[#003366] text-white flex flex-col shadow-2xl z-20 border-r border-[#FF9933]/50">
         <div className="p-8 bg-[#002244] border-b border-[#FF9933]/30">
           <div className="flex items-center gap-4">
-            <div className="bg-white p-2 rounded-xl shadow-lg">
-              <img src="/tn-emblem.png" alt="TN Logo" className="w-10 h-10 object-contain" />
+            <div className="bg-white p-2 rounded-full shadow-lg flex items-center justify-center">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN Logo" className="w-10 h-10 object-contain" />
             </div>
             <div>
               <h1 className="font-black text-lg tracking-tighter uppercase leading-none">Admin Panel</h1>
@@ -170,11 +170,11 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                       <CardContent className="p-8 space-y-6">
                         <div className="space-y-2">
                           <Label className="uppercase text-[10px] font-black tracking-widest text-[#003366]">Full Name</Label>
-                          <Input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="h-12 rounded-xl" placeholder="e.g. John Doe" />
+                          <Input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="h-12 rounded-lg border-slate-200 focus:ring-[#003366]" placeholder="Enter Full Name" />
                         </div>
                         <div className="space-y-2">
                           <Label className="uppercase text-[10px] font-black tracking-widest text-[#003366]">EPIC Number</Label>
-                          <Input value={newUser.voterId} onChange={e => setNewUser({ ...newUser, voterId: e.target.value })} className="h-12 rounded-xl font-mono uppercase" placeholder="ABC1234567" />
+                          <Input value={newUser.voterId} onChange={e => setNewUser({ ...newUser, voterId: e.target.value })} className="h-12 rounded-lg border-slate-200 focus:ring-[#003366] font-mono uppercase" placeholder="Enter EPIC Number" />
                         </div>
                         <div className="space-y-2">
                           <Label className="uppercase text-[10px] font-black tracking-widest text-[#003366]">Secret Password</Label>
@@ -266,20 +266,20 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label className="uppercase text-[10px] font-black text-[#003366]">Party Name</Label>
-                            <Input placeholder="e.g. DMK" value={newParty.name} onChange={e => setNewParty({ ...newParty, name: e.target.value })} className="rounded-xl h-12" />
+                            <Input placeholder="Enter Party Name" value={newParty.name} onChange={e => setNewParty({ ...newParty, name: e.target.value })} className="rounded-lg h-12" />
                           </div>
                           <div className="space-y-2">
                             <Label className="uppercase text-[10px] font-black text-[#003366]">Registry Code</Label>
-                            <Input placeholder="e.g. A" value={newParty.symbol} onChange={e => setNewParty({ ...newParty, symbol: e.target.value })} className="rounded-xl h-12" />
+                            <Input placeholder="Enter Symbol Code" value={newParty.symbol} onChange={e => setNewParty({ ...newParty, symbol: e.target.value })} className="rounded-lg h-12" />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Label className="uppercase text-[10px] font-black text-[#003366]">Official Icon URL</Label>
-                          <Input placeholder="https://..." value={newParty.imageUrl} onChange={e => setNewParty({ ...newParty, imageUrl: e.target.value })} className="rounded-xl h-12" />
+                          <Input placeholder="Enter Image URL" value={newParty.imageUrl} onChange={e => setNewParty({ ...newParty, imageUrl: e.target.value })} className="rounded-lg h-12" />
                         </div>
                         <div className="space-y-2">
                           <Label className="uppercase text-[10px] font-black text-[#003366]">Digital Manifesto</Label>
-                          <Textarea placeholder="Core promises and mission..." className="min-h-[120px] rounded-2xl p-4 bg-slate-50 border-none focus:ring-2 focus:ring-[#FF9933]" value={newParty.manifesto} onChange={e => setNewParty({ ...newParty, manifesto: e.target.value })} />
+                          <Textarea placeholder="Enter manifesto details..." className="min-h-[120px] rounded-lg p-4 bg-slate-50 border-slate-200 focus:ring-2 focus:ring-[#003366]" value={newParty.manifesto} onChange={e => setNewParty({ ...newParty, manifesto: e.target.value })} />
                         </div>
                         <Button onClick={handleAddParty} className="w-full bg-[#003366] hover:bg-[#002244] text-white font-black uppercase tracking-[0.2em] h-14 rounded-2xl shadow-xl shadow-blue-900/10">
                           Confirm Registration

@@ -27,8 +27,8 @@ export function VotingBooth({ parties, onVote, isLoading = false }: VotingBoothP
             {/* Minimal Modern Header for Voting Booth */}
             <div className="w-full max-w-6xl flex justify-between items-center mb-8 px-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white rounded-xl shadow-md border border-[#003366]/10 p-1 overflow-hidden">
-                        <img src="/tn-emblem.png" alt="TN Emblem" className="w-full h-full object-contain" />
+                    <div className="w-12 h-12 bg-white rounded-full shadow-md border border-[#003366]/10 p-1 flex items-center justify-center overflow-hidden">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/81/TamilNadu_Logo.svg" alt="TN Emblem" className="w-full h-full object-contain" />
                     </div>
                     <div>
                         <h2 className="text-sm font-black text-[#003366] uppercase tracking-tighter">TN State Election Commission</h2>
@@ -113,7 +113,7 @@ export function VotingBooth({ parties, onVote, isLoading = false }: VotingBoothP
                         exit={{ y: 100, opacity: 0 }}
                         className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl bg-white/95 backdrop-blur-xl border border-[#003366]/10 p-4 z-50 shadow-[0_20px_50px_rgba(0,51,102,0.2)] rounded-2xl"
                     >
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-10">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-[#003366] rounded-xl flex items-center justify-center shadow-lg">
                                     <Check className="w-6 h-6 text-[#FF9933]" />
