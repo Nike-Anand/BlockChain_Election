@@ -1,0 +1,16 @@
+# Replit Deployment Configuration
+# This file tells Replit how to run your backend
+
+run = "uvicorn app:app --host 0.0.0.0 --port 8000"
+language = "python3"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 8000
+externalPort = 80

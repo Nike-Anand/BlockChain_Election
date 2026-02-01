@@ -27,7 +27,7 @@ export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
     const resultsAvailable = isElectionEnded();
 
     useEffect(() => {
-        fetch('http://127.0.0.1:5000/api/analytics/location-turnout')
+        fetch('http://localhost:8000/api/analytics/location-turnout')
             .then(res => res.json())
             .then(data => {
                 if (data.data) setLocationData(data.data);
@@ -35,7 +35,7 @@ export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
             .catch(err => console.error("Analytics Error:", err));
 
         if (resultsAvailable) {
-            fetch('http://127.0.0.1:5000/api/commission/final-results')
+            fetch('http://localhost:8000/api/commission/final-results')
                 .then(res => res.json())
                 .then(data => {
                     if (data.tally) setFinalTally(data.tally);

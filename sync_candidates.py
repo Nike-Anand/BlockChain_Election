@@ -2,6 +2,7 @@
 from web3 import Web3
 import json
 import os
+import uuid as uuid_lib
 from supabase import create_client
 from dotenv import load_dotenv
 
@@ -13,10 +14,17 @@ supabase = create_client(url, key)
 
 # Web3 Config
 GANACHE_URL = "http://127.0.0.1:7545"
-ADMIN_ACCOUNT = "0xF554e0De3a76D64b41f1A22db74C4B55079Be859"
 
 try:
     w3 = Web3(Web3.HTTPProvider(GANACHE_URL))
+    
+    # Get the first account from Ganache (automatically available)
+    accounts = w3.eth.accounts
+    if not accounts:
+        raise Exception("No accounts found in Ganache")
+    
+    ADMIN_ACCOUNT = accounts[0]
+    print(f"Using Ganache account: {ADMIN_ACCOUNT}")
     w3.eth.default_account = ADMIN_ACCOUNT
 
     with open("artifacts/contracts/Voting.sol/VotingSystem.json") as f:
@@ -31,32 +39,40 @@ try:
 
     # Fetch Parties from DB
     print("Fetching parties from Supabase...")
-    # Order by ID to ensure consistent indices (1, 2, 3...)
     parties = supabase.table("parties").select("*").order("id").execute().data
 
     print(f"Found {len(parties)} parties.")
     
-    # Get current candidates count from Chain to avoid duplicates if re-run
+    # Get current candidates count from Chain
     candidates_count = contract.functions.candidatesCount().call()
     print(f"Current Candidates on Chain: {candidates_count}")
 
     if candidates_count < len(parties):
         print("Syncing Candidates...")
         for i, party in enumerate(parties):
-            # i+1 is the expected ID if we started from 0, but let's just add them.
-            # We skip if index < candidates_count (already added)
             if (i + 1) <= candidates_count:
                 print(f"Skipping {party['name']} (Already on chain)")
                 continue
 
-            print(f"Adding {party['name']}...")
-            tx_hash = contract.functions.addCandidate(party['name']).transact()
+            # Ensure party has UUID
+            party_uuid = party.get('uuid')
+            if not party_uuid:
+                party_uuid = str(uuid_lib.uuid4())
+                supabase.table("parties").update({"uuid": party_uuid}).eq("id", party['id']).execute()
+                print(f"Generated UUID for {party['name']}: {party_uuid}")
+            
+            print(f"Adding {party['name']} with UUID {party_uuid}...")
+            # New contract signature: addCandidate(name, uuid)
+            tx_hash = contract.functions.addCandidate(party['name'], party_uuid).transact()
             w3.eth.wait_for_transaction_receipt(tx_hash)
             print(f"  -> Added. TX: {w3.to_hex(tx_hash)}")
     else:
         print("All parties already synced.")
 
-    print("Sync Complete.")
+    print("✅ Sync Complete.")
 
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"❌ Error: {e}")
+    import traceback
+    traceback.print_exc()
+

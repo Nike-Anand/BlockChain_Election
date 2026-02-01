@@ -60,7 +60,7 @@ export const LivenessCheck: React.FC<LivenessCheckProps> = ({ onVerified, onCanc
       formData.append('live_image', blob, 'live.jpg');
       formData.append('voter_id', voterId);
 
-      const response = await fetch('http://127.0.0.1:5000/api/biometric-verification', {
+      const response = await fetch('http://localhost:8000/api/biometric-verification', {
         method: 'POST',
         body: formData
       });

@@ -1,11 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import cv2
 import numpy as np
 import base64
 from datetime import datetime, timezone, timedelta
 from cryptography.fernet import Fernet
 import asyncio
+from asyncio import Lock
 import dateutil.parser
 import mediapipe as mp
 from ultralytics import YOLO
@@ -13,22 +15,49 @@ import uvicorn
 import math
 import tempfile
 import os
+import hashlib
+import uuid
+from collections import defaultdict
 
-app = FastAPI()
-# Reload Triggered
+# Security imports
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from security import (
+    hash_password, verify_password, create_access_token, verify_token,
+    hash_biometric_photo, create_audit_log, validate_environment
+)
+from models import VoterRegistration, LoginRequest, VoteCast, PartyCreate, SettingsUpdate, UserRegister, PartyAdd
+
+app = FastAPI(title="Secure Election System", version="2.0.0")
+
+# Rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS - PRODUCTION: Replace with your actual domain
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,  # Whitelist specific domains
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-# --- GLOBAL STATE (Ideally use a DB/Session) ---
-# Storing the ID encoding for the current user session
-CURRENT_USER_ID_ENCODING = None
-CURRENT_USER_ID_IMAGE = None
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
 
 # --- MODELS ---
 print("Initializing Models...")
@@ -266,7 +295,7 @@ def calculate_face_vector(img):
     return None
 
 from supabase import create_client, Client
-from backend.config.settings import MONGO_URI, DB_NAME # Kept for env loading mostly
+from config.settings import MONGO_URI, DB_NAME # Kept for env loading mostly
 import os
 from datetime import datetime
 
@@ -285,15 +314,23 @@ try:
     import json
     
     GANACHE_URL = "http://127.0.0.1:7545"
-    ADMIN_ACCOUNT = "0xF554e0De3a76D64b41f1A22db74C4B55079Be859" # Provided by User
     
     w3 = Web3(Web3.HTTPProvider(GANACHE_URL))
     if w3.is_connected():
         print(f"Connected to Ganache: {GANACHE_URL}")
-        w3.eth.default_account = ADMIN_ACCOUNT
+        # Get the first account from Ganache (automatically available)
+        accounts = w3.eth.accounts
+        if accounts:
+            ADMIN_ACCOUNT = accounts[0]
+            print(f"Using Ganache account: {ADMIN_ACCOUNT}")
+            w3.eth.default_account = ADMIN_ACCOUNT
+        else:
+            print("Warning: No accounts found in Ganache")
+            ADMIN_ACCOUNT = None
     else:
         print("Failed to connect to Ganache")
         w3 = None
+        ADMIN_ACCOUNT = None
 
     # Load ABI
     with open("artifacts/contracts/Voting.sol/VotingSystem.json") as f:
@@ -323,14 +360,27 @@ except Exception as e:
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 cipher_suite = Fernet(ENCRYPTION_KEY.encode()) if ENCRYPTION_KEY else None
 
+# --- GLOBAL STATE FOR LOGIC FIXES ---
+vote_locks = defaultdict(Lock)  # voter_id -> Lock (prevent race conditions)
+biometric_sessions = {}  # voter_id -> {nonce, timestamp, used, session_token}
+idempotency_cache = {}  # idempotency_key -> response
+
 def encrypt_data(data: str) -> str:
+    """Encrypt with random salt to prevent frequency analysis"""
     if not cipher_suite or not data: return data
-    return cipher_suite.encrypt(data.encode()).decode()
+    salt = os.urandom(16).hex()  # Random 32-char hex salt
+    salted_text = f"{salt}:{data}"
+    return cipher_suite.encrypt(salted_text.encode()).decode()
 
 def decrypt_data(data: str) -> str:
+    """Decrypt and remove salt"""
     if not cipher_suite or not data: return data
     try:
-        return cipher_suite.decrypt(data.encode()).decode()
+        decrypted_with_salt = cipher_suite.decrypt(data.encode()).decode()
+        if ':' in decrypted_with_salt:
+            salt, original_text = decrypted_with_salt.split(':', 1)
+            return original_text
+        return decrypted_with_salt  # Backward compatibility
     except:
         return data
 
@@ -464,54 +514,68 @@ async def get_location_turnout():
 from pydantic import BaseModel
 from typing import Optional
 
-# --- PYDANTIC MODELS ---
-class UserRegister(BaseModel):
-    username: str
-    password: str
-    voterId: str
-    photoBase64: Optional[str] = None
-    role: str = "voter"
-
-class PartyAdd(BaseModel):
-    name: str
-    symbol: str
-    description: Optional[str] = None
-    manifesto: Optional[str] = None
-    imageUrl: Optional[str] = None
-    votes: int = 0
-
-class VoteCast(BaseModel):
-    userId: str
-    partyName: str
-    boothId: str = "ONLINE"
-    hash: Optional[str] = None
-
-class SettingsUpdate(BaseModel):
-    isActive: Optional[bool] = None
-    registrationOpen: Optional[bool] = None
-    startTime: Optional[str] = None
-    endTime: Optional[str] = None
-    pass1: Optional[str] = None
-    pass2: Optional[str] = None
-    pass3: Optional[str] = None
-    pass4: Optional[str] = None
-
 # --- ACTION ENDPOINTS ---
 
 @app.post("/api/register-voter")
-async def register_voter(user: UserRegister):
+@limiter.limit("10/minute")
+async def register_voter(request: Request, user: UserRegister):
     try:
-        data = {
+        print(f"\\n=== Registering: {user.username}, voterId: {user.voterId} ===")
+        # Hash password before storing
+        hashed_pw = hash_password(user.password)
+        
+        # Hash biometric photo (don't store raw)
+        photo_hash = None
+        if user.photoBase64:
+            photo_hash = hash_biometric_photo(user.photoBase64)
+        
+        # Store user with hashed password
+        user_data = {
             "username": user.username,
-            "password": user.password,
+            "password": hashed_pw,  # Database column is 'password', not 'password_hash'
             "voter_id": user.voterId,
-            "role": user.role,
-            "photo_base64": user.photoBase64
+            "role": user.role
         }
-        supabase.table("users").insert(data).execute()
-        return {"status": "success"}
+        supabase.table("users").insert(user_data).execute()
+        
+        # Store biometric token (hash only)
+        if photo_hash:
+            try:
+                supabase.table("biometric_tokens").insert({
+                    "user_id": user.voterId,
+                    "photo_hash": photo_hash
+                }).execute()
+            except:
+                pass  # Table may not exist yet
+        
+        # Audit log
+        create_audit_log(
+            supabase,
+            action="VOTER_REGISTRATION",
+            user_id=user.voterId,
+            details={"username": user.username, "role": user.role},
+            ip_address=request.client.host if request.client else None
+        )
+        
+        return {"status": "success", "message": "Voter registered successfully"}
+        
     except Exception as e:
-        return {"error": str(e)}
+        # Log failure with traceback
+        import traceback
+        print(f"\\n❌ REGISTRATION ERROR: {type(e).__name__}: {str(e)}")
+        traceback.print_exc()
+        print("=== END ERROR ===\\n")
+        try:
+            create_audit_log(
+                supabase,
+                action="VOTER_REGISTRATION_FAILED",
+                user_id=user.voterId if user else "unknown",
+                details={"error": str(e)},
+                ip_address=request.client.host if request.client else None
+            )
+        except:
+            pass
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/add-party")
 async def add_party(party: PartyAdd):
@@ -530,78 +594,143 @@ async def add_party(party: PartyAdd):
         return {"error": str(e)}
 
 @app.post("/api/cast-vote")
-async def cast_vote(vote: VoteCast):
+async def cast_vote(vote: VoteCast, idempotency_key: str = Header(None)):
     try:
-        # 0. Check Election Status
-        settings = supabase.table("settings").select("*").single().execute().data
-        if not settings or not settings.get("is_active"):
-             raise HTTPException(status_code=403, detail="Election is currently inactive / Polling Closed. Voting is not allowed.")
-
-        tx_hash_val = None
+        voter_id = vote.userId
+        party_name = vote.partyName
+        booth_id = vote.boothId
         
-        # --- BLOCKCHAIN TRANSACTION ---
-        # --- BLOCKCHAIN TRANSACTION ---
-        if w3 and contract_instance:
-            try:
-                # ROBUST MAPPING: Fetch ID directly from Blockchain
-                # This ensures we use the exact ID the contract expects for this name
-                c_id = 999 
-                found_on_chain = False
-                
+        # Idempotency check
+        if idempotency_key and idempotency_key in idempotency_cache:
+            print(f"Returning cached response for {idempotency_key}")
+            return idempotency_cache[idempotency_key]
+        
+        # Acquire lock for this voter (prevent race condition)
+        async with vote_locks[voter_id]:
+            print(f"\n--- [Vote Casting] Voter: {voter_id}, Party: {party_name} ---")
+            
+            # ATOMIC: Check election status at exact moment of vote
+            settings = supabase.table("settings").select("*").execute().data[0]
+            now = datetime.utcnow()
+            
+            if not settings.get('is_active'):
+                raise HTTPException(status_code=403, detail="Election is not active")
+            
+            if settings.get('start_time'):
+                start = datetime.fromisoformat(settings['start_time'])
+                if now < start:
+                    raise HTTPException(status_code=403, detail=f"Election starts at {start}")
+            
+            if settings.get('end_time'):
+                end = datetime.fromisoformat(settings['end_time'])
+                if now > end:
+                    raise HTTPException(status_code=403, detail=f"Election ended at {end}")
+            
+            # Check if already voted (blockchain)
+            if contract_instance:
                 try:
-                    count_on_chain = contract_instance.functions.candidatesCount().call()
-                    print(f"Resolving '{vote.partyName}' against {count_on_chain} chain candidates...")
+                    has_voted = contract_instance.functions.hasVoted(voter_id).call()
+                    if has_voted:
+                        raise HTTPException(status_code=400, detail="Already voted")
+                except Exception as e:
+                    print(f"Blockchain check error: {e}")
+            
+            # Get party UUID from database
+            party = supabase.table("parties").select("*").eq("name", party_name).execute().data
+            if not party:
+                raise HTTPException(status_code=400, detail="Invalid party")
+            
+            party_uuid = party[0].get('uuid')
+            if not party_uuid:
+                # Generate UUID for existing parties (backward compatibility)
+                party_uuid = str(uuid.uuid4())
+                supabase.table("parties").update({"uuid": party_uuid}).eq("name", party_name).execute()
+                print(f"Generated UUID for party {party_name}: {party_uuid}")
+            
+            # Create vote hash (links blockchain to database)
+            timestamp_iso = now.isoformat()
+            encrypted_party = encrypt_data(party_name)  # Now includes random salt
+            
+            vote_hash = hashlib.sha256(
+                f"{encrypted_party}:{voter_id}:{timestamp_iso}".encode()
+            ).hexdigest()
+            
+            print(f"Vote Hash: {vote_hash[:16]}...")
+            
+            # Submit to blockchain
+            tx_hash_val = "BLOCKCHAIN_OFFLINE"
+            if w3 and contract_instance:
+                try:
+                    print(f"Submitting to blockchain: UUID={party_uuid}, Voter={voter_id}")
+                    tx_hash = contract_instance.functions.vote(
+                        party_uuid,
+                        voter_id,
+                        vote_hash
+                    ).transact({'from': ADMIN_ACCOUNT})
                     
-                    for i in range(1, count_on_chain + 1):
-                        cand = contract_instance.functions.candidates(i).call()
-                        # cand structure: [id, name, votes]
-                        c_name = cand[1]
-                        if c_name == vote.partyName:
-                            c_id = cand[0]
-                            found_on_chain = True
-                            print(f" -> Verify: '{vote.partyName}' matches Chain ID {c_id}")
-                            break
-                except Exception as map_err:
-                     print(f"Chain Mapping Error: {map_err}")
-
-                # Fallback: DB Implicit Order (for safety if chain read fails)
-                if not found_on_chain:
-                    print(" -> Warning: Falling back to DB order mapping")
-                    party_list = supabase.table("parties").select("name").order("id").execute().data
-                    for idx, p in enumerate(party_list):
-                        if p["name"] == vote.partyName:
-                            c_id = idx + 1
-                            break
+                    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+                    
+                    if receipt['status'] != 1:
+                        raise Exception("Blockchain transaction failed")
+                    
+                    tx_hash_val = w3.to_hex(tx_hash)
+                    print(f"✅ Blockchain TX: {tx_hash_val}")
+                    
+                except Exception as bc_error:
+                    print(f"❌ Blockchain error: {bc_error}")
+                    raise HTTPException(status_code=500, detail=f"Blockchain error: {str(bc_error)}")
+            
+            # Insert to database (with rollback handling)
+            try:
+                vote_record = {
+                    "user_id": voter_id,
+                    "party_name": encrypted_party,
+                    "vote_hash": vote_hash,
+                    "booth_id": booth_id,
+                    "tx_hash": tx_hash_val,
+                    "timestamp": timestamp_iso
+                }
                 
-                print(f"Blockchain Voting: User {vote.userId} -> Party {vote.partyName} (ID: {c_id})")
+                supabase.table("votes").insert(vote_record).execute()
+                print("✅ Vote recorded in database")
                 
-                # Send Transaction
-                tx = contract_instance.functions.vote(c_id, vote.userId).transact({'from': ADMIN_ACCOUNT})
-                receipt = w3.eth.wait_for_transaction_receipt(tx) # Wait for confirmation to get real hash status
-                tx_hash_val = w3.to_hex(tx)
-                print(f"Blockchain Transaction Success: {tx_hash_val}")
+            except Exception as db_error:
+                # Database failed - mark blockchain vote as invalid
+                print(f"❌ Database error: {db_error}")
                 
-            except Exception as be:
-                print(f"Blockchain Error: {be}")
-                # If blockchain is strictly required, we might want to error out here.
-                # But to keep the app usable if Ganache is down (unless strict mode), we check inputs.
-                # User requested "not a randomized one", implies if blockchain fails, we shouldn't just fake it?
-                # For now, we fall back to a clearly marked error string or the frontend hash if it was provided (though we are removing that).
-                tx_hash_val = "BLOCKCHAIN_FAILED" # Clear indicator
+                if tx_hash_val != "BLOCKCHAIN_OFFLINE":
+                    try:
+                        supabase.table("invalid_votes").insert({
+                            "tx_hash": tx_hash_val,
+                            "voter_id": voter_id,
+                            "reason": f"Database insertion failed: {str(db_error)}",
+                            "timestamp": timestamp_iso
+                        }).execute()
+                    except:
+                        pass  # Best effort
+                
+                raise HTTPException(status_code=500, detail=f"Vote recording failed. Contact admin with TX: {tx_hash_val}")
+            
+            # Success response
+            response = {
+                "status": "success",
+                "tx_hash": tx_hash_val,
+                "vote_hash": vote_hash,
+                "message": "Vote recorded successfully"
+            }
+            
+            # Cache response for idempotency
+            if idempotency_key:
+                idempotency_cache[idempotency_key] = response
+            
+            return response
+            
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"Vote Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-        else:
-             print("Blockchain Not Configured/Connected.")
-             tx_hash_val = "BLOCKCHAIN_OFFLINE"
-
-        # 1. Record Vote in DB (Anonymized + Encrypted)
-        vote_data = {
-            "user_id": vote.userId,
-            "party_name": encrypt_data(vote.partyName), # PURE ENCRYPTION
-            "booth_id": vote.boothId,
-            "tx_hash": tx_hash_val,
-            "timestamp": get_now_ist().isoformat()
-        }
-        supabase.table("votes").insert(vote_data).execute()
         
         # 2. Increment Party Count (DISABLED for Pure E2E Encryption)
         # Results will be calculated by the Commission using the encrypted votes table after the election ends.
@@ -645,37 +774,100 @@ async def update_settings(settings: SettingsUpdate):
 @app.get("/api/commission/final-results")
 async def get_final_results():
     try:
-        # Check if election is ended in IST
         settings = supabase.table("settings").select("*").single().execute().data
-        if not settings: return {"error": "No settings found"}
+        if not settings:
+            return {"error": "No settings found"}
         
-        is_active = settings.get("is_active")
+        now = datetime.utcnow()
+        
+        # TIME-LOCK: Only allow decryption after election ends
+        if settings.get("is_active"):
+            return {"error": "Election is still active. Results locked until election ends."}
+        
         end_time_str = settings.get("end_time")
-        
-        if is_active:
-            return {"error": "Election is still active. Results are restricted (E2E)."}
-            
         if end_time_str:
             end_time = dateutil.parser.isoparse(end_time_str)
-            if get_now_ist() < end_time:
-                 return {"error": "Election end time has not reached yet (IST). Results are restricted."}
-
-        # If ended, decrypt votes and calculate tally
-        votes = supabase.table("votes").select("party_name").execute().data
+            if now < end_time:
+                return {"error": f"Results will be available after {end_time} UTC"}
+        
+        # Decrypt votes
+        votes = supabase.table("votes").select("party_name, vote_hash, tx_hash").execute().data
         tally = {}
+        verified_count = 0
         
         for v in votes:
             encrypted_name = v["party_name"]
+            vote_hash_db = v.get("vote_hash")
+            
             try:
                 decrypted_name = decrypt_data(encrypted_name)
                 tally[decrypted_name] = tally.get(decrypted_name, 0) + 1
-            except:
-                pass
                 
-        return {"status": "success", "tally": tally}
+                # Count verified votes (have hash)
+                if vote_hash_db:
+                    verified_count += 1
+                    
+            except Exception as e:
+                print(f"Decryption error: {e}")
+        
+        return {
+            "status": "success",
+            "tally": tally,
+            "total_votes": len(votes),
+            "verified_votes": verified_count
+        }
         
     except Exception as e:
         return {"error": str(e)}
+
+
+@app.get("/api/verify-vote/{voter_id}")
+async def verify_vote(voter_id: str):
+    """Allow voter to verify their vote was recorded correctly"""
+    try:
+        # Get vote from database
+        db_vote = supabase.table("votes").select("*").eq("user_id", voter_id).execute().data
+        
+        if not db_vote:
+            return {"status": "error", "message": "No vote found"}
+        
+        vote = db_vote[0]
+        vote_hash_db = vote.get("vote_hash")
+        
+        # Get vote hash from blockchain
+        if contract_instance:
+            try:
+                vote_hash_bc = contract_instance.functions.getVoteHash(voter_id).call()
+                
+                if vote_hash_db == vote_hash_bc:
+                    return {
+                        "status": "success",
+                        "message": "Vote verified successfully",
+                        "vote_hash": vote_hash_db,
+                        "tx_hash": vote.get("tx_hash"),
+                        "timestamp": vote.get("timestamp"),
+                        "verified": True
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "Vote hash mismatch - data integrity issue",
+                        "db_hash": vote_hash_db,
+                        "blockchain_hash": vote_hash_bc,
+                        "verified": False
+                    }
+            except Exception as e:
+                print(f"Blockchain verification error: {e}")
+        
+        return {
+            "status": "success",
+            "vote_hash": vote_hash_db,
+            "tx_hash": vote.get("tx_hash"),
+            "blockchain_unavailable": True
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.post("/api/update-db")
 async def update_db_dummy(data: dict):
@@ -1196,6 +1388,15 @@ async def election_scheduler():
 
 @app.on_event("startup")
 async def startup_event():
+    """Validate environment and start background tasks"""
+    # Validate environment variables
+    try:
+        validate_environment()
+        print("✅ Environment validation passed")
+    except Exception as e:
+        print(f"⚠️  Environment validation warning: {e}")
+    
+    # Start election scheduler
     asyncio.create_task(election_scheduler())
 
 if __name__ == "__main__":

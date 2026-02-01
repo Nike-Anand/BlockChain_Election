@@ -31,7 +31,7 @@ export function useElection() {
    * Supabase Migration: Sync & Actions 
    */
   const refreshDb = () => {
-    fetch('http://127.0.0.1:5000/api/get-db')
+    fetch('http://localhost:8000/api/get-db')
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
@@ -60,7 +60,7 @@ export function useElection() {
 
   // Actions
   const registerUser = async (user: Partial<User> & { photoBase64?: string }) => {
-    const res = await fetch('http://127.0.0.1:5000/api/register-voter', {
+    const res = await fetch('http://localhost:8000/api/register-voter', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user)
     });
     const data = await res.json();
@@ -71,7 +71,7 @@ export function useElection() {
   };
 
   const addParty = async (party: Partial<Party>) => {
-    const res = await fetch('http://127.0.0.1:5000/api/add-party', {
+    const res = await fetch('http://localhost:8000/api/add-party', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(party)
     });
     const data = await res.json();
@@ -82,7 +82,7 @@ export function useElection() {
   };
 
   const castVote = async (vote: any) => {
-    const res = await fetch('http://127.0.0.1:5000/api/cast-vote', {
+    const res = await fetch('http://localhost:8000/api/cast-vote', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(vote)
     });
     const data = await res.json();
@@ -93,7 +93,7 @@ export function useElection() {
   }
 
   const updateSettings = async (settings: any) => {
-    await fetch('http://127.0.0.1:5000/api/update-settings', {
+    await fetch('http://localhost:8000/api/update-settings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings)
     });
     refreshDb();
