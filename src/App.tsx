@@ -40,7 +40,13 @@ function App() {
 
   const handleAdminLogin = () => {
     if (!db) return;
-    if (adminLoginData.username === db.admin.username && adminLoginData.password === db.admin.password) {
+    const adminUser = db.users.find((u: any) =>
+      u.role === 'admin' &&
+      u.username === adminLoginData.username &&
+      u.password === adminLoginData.password
+    );
+
+    if (adminUser) {
       setView('admin-dashboard');
       return;
     }
@@ -398,7 +404,7 @@ function App() {
                         onClick={() => setView('commission-login')}
                         className="text-[10px] font-black text-slate-400 hover:text-[#003366] flex flex-col items-center gap-2 uppercase tracking-[0.2em] transition-colors"
                       >
-                        <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50"><ShieldCheck className="w-4 h-4" /></div> Board
+                        <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50"><ShieldCheck className="w-4 h-4" /></div> Commission
                       </button>
                     </div>
                   ) : (

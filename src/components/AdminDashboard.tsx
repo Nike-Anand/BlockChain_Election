@@ -24,7 +24,8 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
   const [locationData, setLocationData] = useState<any[]>([]);
   const [newParty, setNewParty] = useState<Partial<Party>>({ name: '', symbol: '', description: '', manifesto: '', imageUrl: '', votes: 0 });
   const [showAuthModal, setShowAuthModal] = useState<{ show: boolean, action: 'start' | 'stop' | 'schedule', data?: any }>({ show: false, action: 'start' });
-  const [authPasswords, setAuthPasswords] = useState(['', '', '', '']);
+  const [authPassword, setAuthPassword] = useState('');
+  const [showRegistry, setShowRegistry] = useState(false);
 
   const [newUser, setNewUser] = useState({ username: '', password: '', voterId: '' });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -211,45 +212,69 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                     </Card>
                   </div>
                   <div className="lg:col-span-2">
-                    <Card className="bg-white border-none shadow-xl rounded-[2rem] overflow-hidden">
-                      <CardHeader className="p-8 border-b border-slate-50 flex flex-row items-center justify-between">
-                        <CardTitle className="text-sm font-black text-[#003366] uppercase tracking-[0.2em]">Live Registry ({db.users.filter((u: any) => u.role === 'voter').length})</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-0">
-                        <div className="max-h-[700px] overflow-y-auto">
-                          <table className="w-full text-left">
-                            <thead className="bg-[#003366] text-white text-[10px] font-black uppercase tracking-widest sticky top-0 z-10">
-                              <tr>
-                                <th className="p-6">Voter Identity</th>
-                                <th className="p-6">EPIC Reference</th>
-                                <th className="p-6 text-right">Vote Status</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                              {db.users.filter((u: any) => u.role === 'voter').map((user: any, i: number) => {
-                                const voted = db.votes.some((v: any) => v.userId === user.voterId);
-                                return (
-                                  <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
-                                    <td className="p-6">
-                                      <span className="font-black text-[#003366] uppercase">{user.username}</span>
-                                    </td>
-                                    <td className="p-6">
-                                      <span className="font-mono text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-lg group-hover:bg-white transition-colors">{user.voterId}</span>
-                                    </td>
-                                    <td className="p-6 text-right">
-                                      {voted ?
-                                        <span className="px-4 py-1.5 bg-green-500 text-white text-[10px] rounded-full font-black uppercase tracking-widest shadow-lg shadow-green-500/20">Recorded</span> :
-                                        <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[10px] rounded-full font-black uppercase tracking-widest">Awaiting</span>
-                                      }
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    {!showRegistry ? (
+                      <div className="h-full flex items-center justify-center p-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem]">
+                        <Button
+                          onClick={() => setShowRegistry(true)}
+                          className="px-12 h-20 bg-white border-2 border-slate-200 text-black hover:bg-white hover:shadow-2xl hover:scale-105 transition-all duration-500 rounded-3xl font-black uppercase tracking-widest flex items-center gap-4 group"
+                        >
+                          <Users className="w-8 h-8 text-black group-hover:rotate-12 transition-transform" />
+                          <span className="text-black">Show Live Registry </span>
+                          <ChevronRight className="w-6 h-6 text-slate-300" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Card className="bg-white border-none shadow-xl rounded-[2rem] overflow-hidden animate-in fade-in zoom-in duration-500">
+                        <CardHeader className="p-8 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
+                          <CardTitle className="text-sm font-black text-[#003366] uppercase tracking-[0.2em] flex items-center gap-3">
+                            <Users className="w-5 h-5 text-[#FF9933]" />
+                           Registry
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowRegistry(false)}
+                            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500"
+                          >
+                            Hide Registry
+                          </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <div className="max-h-[700px] overflow-y-auto">
+                            <table className="w-full text-left">
+                              <thead className="bg-[#003366] text-white text-[10px] font-black uppercase tracking-widest sticky top-0 z-10">
+                                <tr>
+                                  <th className="p-6">Voter Identity</th>
+                                  <th className="p-6">EPIC Reference</th>
+                                  <th className="p-6 text-right">Vote Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-50">
+                                {db.users.filter((u: any) => u.role === 'voter').map((user: any, i: number) => {
+                                  const voted = db.votes.some((v: any) => v.userId === user.voterId);
+                                  return (
+                                    <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
+                                      <td className="p-6">
+                                        <span className="font-black text-[#003366] uppercase">{user.username}</span>
+                                      </td>
+                                      <td className="p-6">
+                                        <span className="font-mono text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1 rounded-lg group-hover:bg-white transition-colors">{user.voterId}</span>
+                                      </td>
+                                      <td className="p-6 text-right">
+                                        {voted ?
+                                          <span className="px-4 py-1.5 bg-green-500 text-white text-[10px] rounded-full font-black uppercase tracking-widest shadow-lg shadow-green-500/20">Recorded</span> :
+                                          <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[10px] rounded-full font-black uppercase tracking-widest">Awaiting</span>
+                                        }
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 </div>
               )}
@@ -329,10 +354,18 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                           </div>
                         </div>
                         <Button
-                          onClick={() => setShowAuthModal({ show: true, action: db.electionSettings.isActive ? 'stop' : 'start' })}
-                          className={`h-20 px-10 rounded-2xl font-black text-lg uppercase tracking-[0.2em] shadow-2xl transition-all duration-300 ${db.electionSettings.isActive ? "bg-red-600 hover:bg-red-700 shadow-red-500/20" : "bg-green-600 hover:bg-green-700 shadow-green-500/20"}`}
+                          onClick={() => {
+                            const now = new Date();
+                            now.setSeconds(now.getSeconds() - 10);
+                            setShowAuthModal({
+                              show: true,
+                              action: db.electionSettings.isActive ? 'stop' : 'schedule',
+                              data: db.electionSettings.isActive ? null : { startTime: now.toISOString(), endTime: null }
+                            });
+                          }}
+                          className={`h-20 px-10 rounded-2xl font-black text-lg uppercase tracking-[0.2em] shadow-2xl transition-all duration-300 ${db.electionSettings.isActive ? "bg-red-600 hover:bg-red-700 shadow-red-500/20" : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"}`}
                         >
-                          {db.electionSettings.isActive ? "FORCE STOP" : "MANUAL START"}
+                          {db.electionSettings.isActive ? "EMERGENCY FORCE STOP" : "SYSTEM START (AUTO)"}
                         </Button>
                       </div>
 
@@ -357,7 +390,7 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                             if (!s && !e) return showAlert('Valid times required', 'error');
                             setShowAuthModal({ show: true, action: 'schedule', data: { startTime: s ? new Date(s).toISOString() : null, endTime: e ? new Date(e).toISOString() : null } });
                           }}
-                          className="w-full h-14 bg-white border-2 border-slate-200 text-[#003366] hover:bg-slate-50 font-black uppercase tracking-widest rounded-2xl transition-all"
+                          className="w-full h-14 bg-blue-600 border-none text-white hover:bg-blue-700 font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20"
                         >
                           Deploy Time Schedule
                         </Button>
@@ -481,31 +514,33 @@ export function AdminDashboard({ db, addParty, registerUser, updateSettings, onL
                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.3em] mt-3 italic">Identity Verification Required</p>
               </div>
               <div className="p-12 space-y-10">
-                <div className="grid grid-cols-2 gap-6">
-                  {authPasswords.map((p, i) => {
-                    const labels = ['SEC1', 'SEC2', 'OBS1', 'ADM1'];
-                    return (
-                      <div key={i} className="space-y-3">
-                        <Label className="text-[10px] uppercase font-black text-[#003366] tracking-widest pl-2">{labels[i]}</Label>
-                        <Input type="password" value={p} onChange={e => {
-                          const n = [...authPasswords]; n[i] = e.target.value; setAuthPasswords(n);
-                        }} className="h-14 text-center text-xl font-mono focus:ring-4 focus:ring-[#FF9933]/20 rounded-2xl bg-slate-50 border-none shadow-inner" placeholder="••••" />
-                      </div>
-                    )
-                  })}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] uppercase font-black text-[#003366] tracking-widest pl-2">Master Administrative Passcode</Label>
+                    <Input
+                      type="password"
+                      value={authPassword}
+                      onChange={e => setAuthPassword(e.target.value)}
+                      className="h-16 text-center text-2xl font-mono focus:ring-4 focus:ring-[#FF9933]/20 rounded-2xl bg-slate-50 border-none shadow-inner"
+                      placeholder="••••••••"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-4 pt-4">
                   <Button variant="outline" className="flex-1 h-14 rounded-2xl border-2 border-slate-100 text-slate-400 font-black uppercase tracking-widest" onClick={() => setShowAuthModal({ show: false, action: 'start' })}>Abort</Button>
                   <Button className="flex-1 h-14 bg-[#003366] hover:bg-[#002244] text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-900/20" onClick={async () => {
-                    const { pass1, pass2, pass3, pass4 } = db.electionSettings;
-                    if (authPasswords[0] === pass1 && authPasswords[1] === pass2 && authPasswords[2] === pass3 && authPasswords[3] === pass4) {
-                      if (showAuthModal.action === 'start') await handleUpdateSettings({ isActive: true, startTime: new Date().toISOString() });
-                      else if (showAuthModal.action === 'stop') await handleUpdateSettings({ isActive: false, endTime: new Date().toISOString() });
-                      else if (showAuthModal.action === 'schedule') await handleUpdateSettings(showAuthModal.data);
+                    // Validate against the primary admin password (pass4 or db.admin.password)
+                    const masterKey = db.electionSettings.pass4 || (db.admin ? db.admin.password : '123');
+                    if (authPassword === masterKey) {
+                      if (showAuthModal.action === 'stop') {
+                        await handleUpdateSettings({ isActive: false, endTime: new Date().toISOString() });
+                      } else if (showAuthModal.action === 'schedule') {
+                        await handleUpdateSettings(showAuthModal.data);
+                      }
                       setShowAuthModal({ show: false, action: 'start' });
-                      setAuthPasswords(['', '', '', '']);
-                    } else showAlert('SEGMENT KEY MISMATCH', 'error');
-                  }}>Validate Keys</Button>
+                      setAuthPassword('');
+                    } else showAlert('AUTHORIZATION KEY INVALID', 'error');
+                  }}>Confirm Access</Button>
                 </div>
               </div>
             </motion.div>

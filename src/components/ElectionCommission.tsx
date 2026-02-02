@@ -11,7 +11,7 @@ interface ElectionCommissionProps {
     showAlert: (message: string, type: string) => void;
 }
 
-export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
+export function ElectionCommission({ db, onLogout, showAlert }: ElectionCommissionProps) {
     const [activeTab, setActiveTab] = useState<'results' | 'reports'>('results');
     const [locationData, setLocationData] = useState<any[]>([]);
     const [finalTally, setFinalTally] = useState<any>(null);
@@ -31,14 +31,23 @@ export function ElectionCommission({ db, onLogout }: ElectionCommissionProps) {
             .then(res => res.json())
             .then(data => {
                 if (data.data) setLocationData(data.data);
+                else if (data.error) showAlert(data.error, 'error');
             })
-            .catch(err => console.error("Analytics Error:", err));
+            .catch(err => {
+                console.error("Analytics Error:", err);
+                showAlert('Failed to load analytics data', 'error');
+            });
 
         if (resultsAvailable) {
             fetch('http://localhost:8000/api/commission/final-results')
                 .then(res => res.json())
                 .then(data => {
                     if (data.tally) setFinalTally(data.tally);
+                    else if (data.error) showAlert(data.error, 'error');
+                })
+                .catch(err => {
+                    console.error("Results Error:", err);
+                    showAlert('Failed to load final results', 'error');
                 });
         }
     }, [db.votes, resultsAvailable]);

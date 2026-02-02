@@ -171,6 +171,12 @@ export const LivenessCheck: React.FC<LivenessCheckProps> = ({ onVerified, onCanc
             ref={webcamRef}
             audio={false}
             screenshotFormat="image/jpeg"
+            screenshotQuality={0.6}
+            videoConstraints={{
+              width: 640,
+              height: 480,
+              facingMode: "user"
+            }}
             className="absolute inset-0 w-full h-full object-cover"
             mirrored={true}
             onUserMediaError={() => setError("Camera Access Denied")}

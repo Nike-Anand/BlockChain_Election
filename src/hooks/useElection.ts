@@ -56,7 +56,12 @@ export function useElection() {
       });
   };
 
-  useEffect(() => { refreshDb(); }, []);
+  useEffect(() => {
+    refreshDb();
+    // Start polling every 5 seconds to sync state (important for scheduler)
+    const interval = setInterval(refreshDb, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Actions
   const registerUser = async (user: Partial<User> & { photoBase64?: string }) => {
